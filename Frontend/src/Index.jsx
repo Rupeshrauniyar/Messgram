@@ -8,7 +8,7 @@ import Notfound from "./pages/Notfound";
 import IsSignedIn from "./middleware/IsSignedIn";
 import AddFriend from "./pages/Add-friend";
 import Call from "./pages/Call";
-import CallMonitor from "./middleware/callMonitor";
+import CallMonitor from "./middleware/CallMonitor";
 const Index = () => {
   return (
     <div className="w-full h-screen bg-black text-white z-10">

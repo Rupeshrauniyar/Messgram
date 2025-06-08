@@ -12,11 +12,13 @@
   "dependencies": {
     "@capacitor/android": "^7.0.1",
     "@capacitor/app": "^7.0.0",
+    "@capacitor/camera": "^7.0.1",
     "@capacitor/core": "^7.0.1",
     "@capacitor/ios": "^7.0.1",
     "@capacitor/splash-screen": "^7.0.0",
     "@tailwindcss/vite": "^4.0.9",
     "axios": "^1.8.1",
+    "cordova-plugin-android-permissions": "^1.1.5",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.477.0",
     "react": "^19.0.0",
