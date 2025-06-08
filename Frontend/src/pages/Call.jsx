@@ -108,7 +108,7 @@ const Call = () => {
         receiverId: params.receiverId,
       };
       socket.emit("close-call", Data);
-      navigate("/");
+      navigate(-1);
     } catch (err) {
       navigate(-1);
     }
