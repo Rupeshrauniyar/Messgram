@@ -252,11 +252,6 @@ const Message = () => {
               onClick={() => handleCall()}>
               <VideoIcon size={25} />
             </button>
-            <button
-              className="text-green-600 hover:text-white transition-colors cursor-pointer"
-              onClick={() => handleCall()}>
-              <PhoneCall size={20} />
-            </button>
 
             {/* <button className="text-gray-400 hover:text-white transition-colors">
               <Search size={20} />

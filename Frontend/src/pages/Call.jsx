@@ -17,6 +17,7 @@ const Call = () => {
   const [isVideo, setIsVideo] = useState(true);
   const [isAudio, setIsAudio] = useState(true);
   const [isScreenShare, setScreenShare] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const {user, offer, setOffer} = useContext(UserContext);
   const myStreamRef = useRef(null);
@@ -168,6 +169,7 @@ const Call = () => {
     } catch (err) {
       alert("Unable to share screen", err);
       console.log(err);
+      setErrorMessage(err);
     }
   };
 
@@ -238,36 +240,39 @@ const Call = () => {
   }, []);
 
   return (
-    <div className="w-full h-screen bg-black  text-white ">
-      <video
-        autoPlay
-        playsInline
-        ref={frndsStreamRef}
-        className={`w-full h-full rounded-4xl scale-x-[-1] absolute  `}
-      />
-      <div className="fixed MyStream w-[20%] md:h-[20%] z-20  right-0 bottom-38">
+    <>
+      <div className="w-full bg-white text-red-500 h-full">{errorMessage}</div>
+      <div className="w-full h-screen bg-black  text-white ">
         <video
           autoPlay
-          muted
           playsInline
-          ref={myStreamRef}
-          className={` scale-x-[-1] p-2 rounded-2xl`}
+          ref={frndsStreamRef}
+          className={`w-full h-full rounded-4xl scale-x-[-1] absolute  `}
         />
-      </div>
+        <div className="fixed MyStream w-[20%] md:h-[20%] z-20  right-0 bottom-38">
+          <video
+            autoPlay
+            muted
+            playsInline
+            ref={myStreamRef}
+            className={` scale-x-[-1] p-2 rounded-2xl`}
+          />
+        </div>
 
-      <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-between p-4">
-        <button
-          className="bg-zinc-500 p-3 rounded-full"
-          onClick={() => handleScreenShare()}>
-          <ScreenShare />
-        </button>
-        <button
-          className="bg-red-500 p-3 rounded-full"
-          onClick={() => handleCallEndInitiator()}>
-          <PhoneOff />
-        </button>
+        <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-between p-4">
+          <button
+            className="bg-zinc-500 p-3 rounded-full"
+            onClick={() => handleScreenShare()}>
+            <ScreenShare />
+          </button>
+          <button
+            className="bg-red-500 p-3 rounded-full"
+            onClick={() => handleCallEndInitiator()}>
+            <PhoneOff />
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
