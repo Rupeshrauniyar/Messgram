@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("close-call", (Data) => {
-        console.log(Data)
+        // console.log(Data)
         socket.broadcast.to(Data.chatId).emit("close-call")
         // console.log(`socket, ${Data.receiverId}__call-closed`)
         io.emit(`${Data.receiverId}__call-closed`, Data.chatId)
@@ -91,6 +91,15 @@ io.on("connection", (socket) => {
         })
     })
 
+
+    socket.on("typing", (Data) => {
+        // console.log(Data)
+        socket.to(Data).emit("typing")
+    })
+    socket.on("stopped-typing", (Data) => {
+        // console.log(Data)
+        socket.to(Data).emit("stopped-typing")
+    })
 })
 
 server.listen(port, () => console.log(`App listening on port ${port}!`))

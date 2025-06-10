@@ -1,14 +1,14 @@
 "use client";
 
 import {useState, useRef, useEffect, useContext} from "react";
-import {Send, Mic, Image, Video, Paperclip, Search, MoreVertical, Phone, VideoIcon, ArrowLeft, Smile, User, Lock} from "lucide-react";
+import {Send, Mic, Image, Video, Paperclip, Search, MoreVertical, Phone, VideoIcon, ArrowLeft, Smile, User, Lock, PhoneCallIcon, PhoneCall} from "lucide-react";
 import {UserContext} from "../context/UserContext";
 import {io} from "socket.io-client";
 import {Link, useNavigate, useParams} from "react-router-dom";
 import axios from "axios";
 const BACKENDURL = import.meta.env.VITE_BACKEND;
 const socket = io(BACKENDURL);
-
+import {motion} from "framer-motion";
 import Cookies from "js-cookie";
 
 // Custom CSS for handling long words and URLs
@@ -58,6 +58,9 @@ const Message = () => {
   const [chatId, setchatId] = useState("");
   const [chat, setChat] = useState([]);
   const [ready, setReady] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [sentTypingSocket, setSentTypingSocket] = useState(false);
+
   const [showEncryptionNotice, setShowEncryptionNotice] = useState(false);
 
   // Update textarea height whenever message content changes
@@ -80,6 +83,17 @@ const Message = () => {
     }
   };
 
+  useEffect(() => {
+    if (message.trim() && message.length > 0) {
+      // console.log("started Typing");
+      socket.emit("typing", chatId);
+      // setSentTypingSocket(true);
+    } else {
+      socket.emit("stopped-typing", chatId);
+      // setSentTypingSocket(false);
+    }
+    // console.log(sentTypingSocket);
+  }, [message]);
   useEffect(() => {
     const GetChat = async () => {
       try {
@@ -111,10 +125,10 @@ const Message = () => {
     GetChat();
 
     socket.on("universal-message", (Data) => {
-      console.log(Data);
+      // console.log(Data);
     });
     socket.on("receive-message", (Data) => {
-      console.log(Data);
+      // console.log(Data);
       const MessageData = {
         sender: Data.sender,
         time: Data.time,
@@ -125,11 +139,17 @@ const Message = () => {
         messages: [...prev.messages, MessageData],
       }));
     });
-  }, []);
 
-  // Add the keyframes to the document
-  useEffect(() => {
-    // Create a style element
+    socket.on("typing", () => {
+      // console.log("typing");
+      setTyping(true);
+      messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
+    });
+    socket.on("stopped-typing", () => {
+      // console.log("typing");
+      setTyping(false);
+    });
+
     const styleElement = document.createElement("style");
     styleElement.innerHTML = pulseKeyframes;
 
@@ -143,8 +163,9 @@ const Message = () => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
+    messagesEndRef.current?.scrollIntoView();
   }, [chat?.messages]);
+
   const handleInputChange = (e) => {
     setMessage(e.target.value);
   };
@@ -178,6 +199,7 @@ const Message = () => {
   const handleCall = () => {
     setCallInitiation(true);
     navigate(`/call/${chatId}/${receiverId}/?initiator=true`);
+    // window.open("/about", "_blank");
   };
 
   const handleKeyDown = (e) => {
@@ -196,8 +218,12 @@ const Message = () => {
     <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
       <div className="Noscroll fixed left-0 w-full top-0 z-10 flex flex-col h-full backdrop-blur-sm">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 pt-8 bg-gray-900/60 border-b border-gray-800">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between py-3 px-1  bg-gray-900/60 border-b border-gray-800">
+          <motion.div
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            transition={{duration: 1}}
+            className="flex items-center space-x-4">
             <Link
               to="/"
               className="text-gray-400 hover:text-white transition-colors">
@@ -210,20 +236,28 @@ const Message = () => {
             {chat?.users
               ?.filter((chatUser) => chatUser._id !== user._id)
               .map((chatUser, i) => (
-                <div key={i}>
+                <motion.div
+                  initial={{opacity: 0}}
+                  animate={{opacity: 1}}
+                  transition={{duration: 1}}
+                  key={i}>
                   <h2 className="font-bold">{chatUser.username}</h2>
                   <p className="text-sm text-gray-400">Online</p>
-                </div>
+                </motion.div>
               ))}
-          </div>
+          </motion.div>
           <div className="flex items-center space-x-4">
             <button
-              className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+              className="text-green-600 hover:text-white transition-colors cursor-pointer"
               onClick={() => handleCall()}>
-              <VideoIcon size={30} />
+              <VideoIcon size={25} />
+            </button>
+            <button
+              className="text-green-600 hover:text-white transition-colors cursor-pointer"
+              onClick={() => handleCall()}>
+              <PhoneCall size={20} />
             </button>
 
-           
             {/* <button className="text-gray-400 hover:text-white transition-colors">
               <Search size={20} />
             </button>
@@ -253,18 +287,59 @@ const Message = () => {
           )}
 
           {chat?.messages?.map((chatMessage, i) => (
-            <div
-              className={`flex ${chatMessage.sender === user._id ? "justify-end" : "justify-start"}`}
+            <motion.div
+              initial={{opacity: 0}}
+              animate={{opacity: 1}}
+              transition={{duration: 1}}
+              className={`flex  ${chatMessage.sender === user._id ? "justify-end " : "justify-start"}`}
               key={i}>
-              <div className="bg-gray-800/80 rounded-lg p-3 max-w-xs md:max-w-sm backdrop-blur-sm">
-                <p
-                  className="whitespace-pre-wrap"
-                  style={messageStyles}>
-                  {chatMessage.message}
+              <div className="flex flex-col">
+                <div
+                  className={`bg-gray-800/80 rounded-full  max-w-xs md:max-w-sm backdrop-blur-sm ${
+                    chatMessage.message.length === 1 ? "text-center py-3" : "px-3 py-2"
+                  }`}>
+                  <p
+                    className="whitespace-pre-wrap"
+                    style={messageStyles}>
+                    {chatMessage.message}
+                  </p>
+                </div>
+                <p className={`text-xs text-zinc-400 flex items-center ${chatMessage.sender === user._id ? "justify-end mr-2" : "justify-start ml-2"}`}>
+                  {new Date(chatMessage.time).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
+          {typing ? (
+            <>
+              <motion.div
+                initial={{opacity: 0}}
+                animate={{opacity: 1}}
+                transition={{duration: 1}}
+                className={`flex justify-start`}>
+                <div className="flex   px-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 p-2 hover:from-purple-700 hover:to-blue-700 transition-colors">
+                  <p
+                    className="whitespace-pre-wrap animate-bounce"
+                    style={{...messageStyles, animationDelay: "0ms"}}>
+                    .
+                  </p>
+                  <p
+                    className="whitespace-pre-wrap animate-bounce "
+                    style={{...messageStyles, animationDelay: "100ms"}}>
+                    .
+                  </p>
+                  <p
+                    className="whitespace-pre-wrap animate-bounce "
+                    style={{...messageStyles, animationDelay: "200ms"}}>
+                    .
+                  </p>
+                </div>
+              </motion.div>
+            </>
+          ) : (
+            <></>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -275,7 +350,10 @@ const Message = () => {
               <Paperclip size={20} />
             </button>
             <div className="flex-grow bg-gray-800/50 rounded-lg px-4 py-2 backdrop-blur-sm">
-              <textarea
+              <motion.textarea
+                initial={{opacity: 0}}
+                animate={{opacity: 1}}
+                transition={{duration: 1}}
                 ref={textareaRef}
                 rows={1}
                 placeholder="Type a message..."
@@ -295,29 +373,33 @@ const Message = () => {
               />
             </div>
 
-            {message ? (
-              <button
+            {message && message.trim() ? (
+              <motion.button
+                initial={{x: 100}}
+                animate={{x: 0}}
+                transition={{duration: 0.3}}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-full hover:from-purple-700 hover:to-blue-700 transition-colors"
                 onClick={handleSend}>
                 <Send
                   size={20}
                   className="text-white"
                 />
-              </button>
+              </motion.button>
             ) : (
-              <span className="flex justify-between mb-1 space-x-2">
-                <button
-                  className={` rounded-full p-2 transition-colors ${isRecording ? "bg-red-500 " : "text-gray-400 hover:text-white"}`}
-                  onClick={handleVoiceInput}>
-                  <Mic size={20} />
-                </button>
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <Image size={20} />
-                </button>
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <Video size={20} />
-                </button>
-              </span>
+              <></>
+              // <span className="flex justify-between mb-1 space-x-2">
+              //   <button
+              //     className={` rounded-full p-2 transition-colors ${isRecording ? "bg-red-500 " : "text-gray-400 hover:text-white"}`}
+              //     onClick={handleVoiceInput}>
+              //     <Mic size={20} />
+              //   </button>
+              //   <button className="text-gray-400 hover:text-white transition-colors">
+              //     <Image size={20} />
+              //   </button>
+              //   <button className="text-gray-400 hover:text-white transition-colors">
+              //     <Video size={20} />
+              //   </button>
+              // </span>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import {useState, useRef, useEffect, useContext} from "react";
-import {Mic, Video, VideoIcon, ArrowLeft, User, Lock, PhoneOff} from "lucide-react";
+import {Mic, Video, VideoIcon, ArrowLeft, User, Lock, PhoneOff, ScreenShare} from "lucide-react";
 import {UserContext} from "../context/UserContext";
 import {io} from "socket.io-client";
 import {Link, useNavigate, useParams, useLocation} from "react-router-dom";
@@ -16,6 +16,8 @@ const Call = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideo, setIsVideo] = useState(true);
   const [isAudio, setIsAudio] = useState(true);
+  const [isScreenShare, setScreenShare] = useState(false);
+
   const {user, offer, setOffer} = useContext(UserContext);
   const myStreamRef = useRef(null);
   const frndsStreamRef = useRef(null);
@@ -126,7 +128,54 @@ const Call = () => {
       navigate(-1);
     }
   };
+  const handleScreenShare = () => {
+    try {
+      navigator.mediaDevices.getDisplayMedia({screen: true, audio: true}).then((stream) => {
+        const videoSender = peer.getSenders().find((s) => s.track?.kind === "video");
+        const screenTrack = stream.getTracks()[0];
+        stream.getTracks().forEach(async (track) => {
+          if (videoSender) {
+            await videoSender.replaceTrack(track);
+          } else {
+            peer.addTrack(track, stream);
+          }
+        });
 
+        myStreamRef.current.srcObject = stream;
+        streamRef.current = stream;
+        setScreenShare(true);
+        screenTrack.onended = () => {
+          // When screen share ends (user clicks stop sharing)
+          stopScreenShare();
+        };
+      });
+    } catch (err) {
+      alert("Unable to share screen");
+      console.log(err);
+    }
+  };
+
+  const stopScreenShare = async () => {
+    try {
+      navigator.mediaDevices.getUserMedia({video: true, audio: true}).then((stream) => {
+        const videoSender = peer.getSenders().find((s) => s.track?.kind === "video");
+        const screenTrack = stream.getTracks()[0];
+        stream.getTracks().forEach(async (track) => {
+          if (videoSender) {
+            await videoSender.replaceTrack(track);
+          } else {
+            peer.addTrack(track, stream);
+          }
+        });
+        setScreenShare(false);
+        myStreamRef.current.srcObject = stream;
+        streamRef.current = stream;
+      });
+    } catch (err) {
+      alert("Unable to share screen");
+      console.log(err);
+    }
+  };
   useEffect(() => {
     getStream();
 
@@ -147,6 +196,7 @@ const Call = () => {
       if (event.streams[0]) {
         frndsStreamRef.current.srcObject = event.streams[0];
       }
+      console.log(event);
     };
     socket.on("join-callees", async (answer) => {
       ringAudio.pause();
@@ -177,7 +227,7 @@ const Call = () => {
         autoPlay
         playsInline
         ref={frndsStreamRef}
-        className="w-full h-full rounded-4xl scale-x-[-1] absolute  "
+        className={`w-full h-full rounded-4xl ${isScreenShare ? "scale-x-100" : "scale-x-[-1]"} absolute  `}
       />
       <div className="fixed MyStream w-[20%] h-[10%] z-20  right-0 bottom-38">
         <video
@@ -185,12 +235,16 @@ const Call = () => {
           muted
           playsInline
           ref={myStreamRef}
-          className=" scale-x-[-1] p-2 rounded-2xl"
+          className={` ${isScreenShare ? "scale-x-100" : "scale-x-[-1]"} p-2 rounded-2xl`}
         />
       </div>
 
-      <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-center p-4">
-        <button></button>
+      <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-between p-4">
+        <button
+          className="bg-zinc-500 p-3 rounded-full"
+          onClick={() => handleScreenShare()}>
+          <ScreenShare />
+        </button>
         <button
           className="bg-red-500 p-3 rounded-full"
           onClick={() => handleCallEndInitiator()}>
