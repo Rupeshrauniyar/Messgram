@@ -150,7 +150,7 @@ const Call = () => {
         };
       });
     } catch (err) {
-      alert("Unable to share screen");
+      alert("Unable to share screen",err);
       console.log(err);
     }
   };
@@ -172,7 +172,7 @@ const Call = () => {
         streamRef.current = stream;
       });
     } catch (err) {
-      alert("Unable to share screen");
+      alert("Unable to stop share screen");
       console.log(err);
     }
   };
@@ -227,15 +227,15 @@ const Call = () => {
         autoPlay
         playsInline
         ref={frndsStreamRef}
-        className={`w-full h-full rounded-4xl ${isScreenShare ? "scale-x-100" : "scale-x-[-1]"} absolute  `}
+        className={`w-full h-full rounded-4xl scale-x-[-1] absolute  `}
       />
-      <div className="fixed MyStream w-[20%] h-[10%] z-20  right-0 bottom-38">
+      <div className="fixed MyStream w-[20%] md:h-[20%] z-20  right-0 bottom-38">
         <video
           autoPlay
           muted
           playsInline
           ref={myStreamRef}
-          className={` ${isScreenShare ? "scale-x-100" : "scale-x-[-1]"} p-2 rounded-2xl`}
+          className={` scale-x-[-1] p-2 rounded-2xl`}
         />
       </div>
 
