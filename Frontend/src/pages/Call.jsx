@@ -26,7 +26,23 @@ const Call = () => {
   const chatId = params.chatId;
   const receiverId = params.receiverId;
   const peer = new RTCPeerConnection({
-    iceServers: [{urls: "stun:stun.l.google.com:19302"}],
+    iceServers: [
+      {
+        urls: ["stun:stun.l.google.com:19302", "stun:bn-turn2.xirsys.com"],
+      },
+      {
+        username: "Wp4SeP3STfuzgmhrc7ctoqDkgIDVDWqHBh3INHsrb5fc5OWGdMvR9V1qn8fT0MMEAAAAAGhFF0dydXBlc2ho",
+        credential: "84349dea-4424-11f0-bb6d-0242ac140004",
+        urls: [
+          "turn:bn-turn2.xirsys.com:80?transport=udp",
+          "turn:bn-turn2.xirsys.com:3478?transport=udp",
+          "turn:bn-turn2.xirsys.com:80?transport=tcp",
+          "turn:bn-turn2.xirsys.com:3478?transport=tcp",
+          "turns:bn-turn2.xirsys.com:443?transport=tcp",
+          "turns:bn-turn2.xirsys.com:5349?transport=tcp",
+        ],
+      },
+    ],
   });
   const ringAudio = new Audio(outgoing);
   const incomingRingAudio = new Audio(incoming);
@@ -150,7 +166,7 @@ const Call = () => {
         };
       });
     } catch (err) {
-      alert("Unable to share screen",err);
+      alert("Unable to share screen", err);
       console.log(err);
     }
   };
