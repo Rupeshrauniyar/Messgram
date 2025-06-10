@@ -242,7 +242,7 @@ const Call = () => {
 
   return (
     <>
-      <div className="w-full bg-white text-red-500 h-full">{errorMessage ? errorMessage : "Null"}</div>
+      {/* <div className="w-full bg-white text-red-500 h-full">{errorMessage ? errorMessage : "Null"}</div> */}
       <div className="w-full h-screen bg-black  text-white ">
         <video
           autoPlay
