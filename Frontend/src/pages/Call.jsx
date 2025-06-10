@@ -147,6 +147,7 @@ const Call = () => {
   };
   const handleScreenShare = () => {
     try {
+      setErrorMessage("no errorMessage");
       navigator.mediaDevices.getDisplayMedia({screen: true, audio: true}).then((stream) => {
         const videoSender = peer.getSenders().find((s) => s.track?.kind === "video");
         const screenTrack = stream.getTracks()[0];
@@ -241,7 +242,7 @@ const Call = () => {
 
   return (
     <>
-      <div className="w-full bg-white text-red-500 h-full">{errorMessage.length > 0 ? errorMessage : "Null"}</div>
+      <div className="w-full bg-white text-red-500 h-full">{errorMessage ? errorMessage : "Null"}</div>
       <div className="w-full h-screen bg-black  text-white ">
         <video
           autoPlay
