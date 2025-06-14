@@ -246,20 +246,24 @@ const Message = () => {
                 </motion.div>
               ))}
           </motion.div>
-          <div className="flex items-center space-x-4">
-            <button
-              className="text-green-600 hover:text-white transition-colors cursor-pointer"
-              onClick={() => handleCall()}>
-              <VideoIcon size={25} />
-            </button>
+          {chatId ? (
+            <div className="flex items-center space-x-4">
+              <button
+                className="text-green-600 hover:text-white transition-colors cursor-pointer"
+                onClick={() => handleCall()}>
+                <VideoIcon size={25} />
+              </button>
 
-            {/* <button className="text-gray-400 hover:text-white transition-colors">
+              {/* <button className="text-gray-400 hover:text-white transition-colors">
               <Search size={20} />
             </button>
             <button className="text-gray-400 hover:text-white transition-colors">
               <MoreVertical size={20} />
             </button> */}
-          </div>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
 
         {/* Message Display Area - will shrink when input grows */}

@@ -3,23 +3,25 @@ import {Mic, Video, VideoIcon, ArrowLeft, User, Lock, PhoneOff, ScreenShare} fro
 import {UserContext} from "../context/UserContext";
 import {io} from "socket.io-client";
 import {Link, useNavigate, useParams, useLocation} from "react-router-dom";
-import axios from "axios";
 const BACKENDURL = import.meta.env.VITE_BACKEND;
 const socket = io(BACKENDURL);
-import Cookies from "js-cookie";
 import outgoing from "/src/assets/outgoing.mp3";
-import incoming from "/src/assets/incoming.mp3";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 const Call = () => {
+  const token = Cookies.get("token");
+
   const navigate = useNavigate();
   // const [stream, setStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [isVideo, setIsVideo] = useState(true);
   const [isAudio, setIsAudio] = useState(true);
   const [isScreenShare, setScreenShare] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const {user, offer, setOffer} = useContext(UserContext);
+  const [calleeUser, setCalleeUser] = useState({});
+  const {user, offer, caller} = useContext(UserContext);
   const myStreamRef = useRef(null);
   const frndsStreamRef = useRef(null);
   const params = useParams();
@@ -46,18 +48,50 @@ const Call = () => {
     ],
   });
   const ringAudio = new Audio(outgoing);
-  const incomingRingAudio = new Audio(incoming);
+  // const incomingRingAudio = new Audio(incoming);
 
   const streamRef = useRef(null);
-  const ringAudioRef = useRef(null);
-
+  // const ringAudioRef = useRef(null);
+  const handleCallEndInitiator = () => {
+    try {
+      // clearInterval(ringAudioRef.current);
+      ringAudio.pause();
+      ringAudio.currentTime = 0;
+      peer.close();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+      const Data = {
+        chatId,
+        receiverId: params.receiverId,
+      };
+      socket.emit("close-call", Data);
+      navigate(-1);
+    } catch (err) {
+      navigate(-1);
+    }
+  };
+  const handleCallEndReceiver = () => {
+    try {
+      ringAudio.pause();
+      ringAudio.currentTime = 0;
+      peer.close();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+      navigate(-1);
+    } catch (err) {
+      navigate(-1);
+    }
+  };
   const initiateCall = async () => {
     try {
       const offer = await peer.createOffer();
-      // ringAudio.play();
-      ringAudioRef.current = setInterval(() => {
-        // ringAudio.play();
-      }, 5000);
+      ringAudio.play();
 
       await peer.setLocalDescription(offer);
       const Data = {
@@ -67,13 +101,27 @@ const Call = () => {
         user,
       };
       socket.emit("initiate-call", Data);
+      const response = await axios.post(
+        `${BACKENDURL}/api/search-users`,
+
+        {receiverId},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Add token to headers for authenticated requests
+          },
+        }
+      );
+      if (response.data) {
+        setCalleeUser(response.data.user);
+      }
     } catch (err) {
       navigate(-1);
     }
   };
   const initiateReceiver = async () => {
     try {
-      incomingRingAudio.pause();
+      // incomingRingAudio.pause();
+      setCalleeUser(caller);
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
@@ -83,10 +131,13 @@ const Call = () => {
       };
       socket.emit("receive-call", Data);
     } catch (err) {
+      handleCallEndInitiator();
+      // console.log(err);
       navigate(-1);
     }
     // console.log(offer);
   };
+
   const getStream = async () => {
     try {
       await navigator.mediaDevices
@@ -108,43 +159,12 @@ const Call = () => {
           // frndsStreamRef.current.srcObject = stream;
         });
     } catch (err) {
+      handleCallEndInitiator();
+      // console.log(err);
       navigate(-1);
     }
   };
-  const handleCallEndInitiator = () => {
-    try {
-      clearInterval(ringAudioRef.current);
-      ringAudio.pause();
-      ringAudio.currentTime = 0;
-      peer.close();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => {
-          track.stop();
-        });
-      }
-      const Data = {
-        chatId,
-        receiverId: params.receiverId,
-      };
-      socket.emit("close-call", Data);
-      navigate(-1);
-    } catch (err) {
-      navigate(-1);
-    }
-  };
-  const handleCallEndReceiver = () => {
-    try {
-      peer.close();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => {
-          track.stop();
-        });
-      }
-      navigate(-1);
-    } catch (err) {
-      navigate(-1);
-    }
-  };
+
   const handleScreenShare = () => {
     try {
       setErrorMessage("no errorMessage");
@@ -169,7 +189,7 @@ const Call = () => {
       });
     } catch (err) {
       alert("Unable to share screen", err);
-      console.log(err);
+      // console.log(err);
       setErrorMessage(err);
     }
   };
@@ -192,7 +212,7 @@ const Call = () => {
       });
     } catch (err) {
       alert("Unable to stop share screen");
-      console.log(err);
+      // console.log(err);
     }
   };
   useEffect(() => {
@@ -215,17 +235,18 @@ const Call = () => {
       if (event.streams[0]) {
         frndsStreamRef.current.srcObject = event.streams[0];
       }
-      console.log(event);
+      // console.log(event);
     };
     socket.on("join-callees", async (answer) => {
-      ringAudio.pause();
+      // ringAudio.pause();
       await peer.setRemoteDescription(answer);
       // console.log(answer);
-      clearInterval(ringAudioRef.current);
+      // clearInterval(ringAudioRef.current);
       ringAudio.pause();
       ringAudio.currentTime = 0;
     });
     socket.on("new-candidate", async (candidate) => {
+      // ringAudio.pause();
       await peer.addIceCandidate(new RTCIceCandidate(candidate));
       // console.log("new-candidate");
     });
@@ -239,9 +260,28 @@ const Call = () => {
       socket.off("close-call");
     };
   }, []);
-
+  useEffect(() => {
+    if (!isHidden) {
+      setTimeout(() => {
+        setIsHidden(true);
+      }, 3000);
+    }
+  });
+  useEffect(() => {
+    window.addEventListener("click", () => {
+      setIsHidden(false);
+    });
+  }, []);
   return (
     <>
+      {!isHidden && calleeUser?.username ? (
+        <div className="fixed top-0 bg-zinc-800 w-full h-15 rounded-b-md flex items-center  p-4 ">
+          <span className="capitalize bg-gradient-to-br from-purple-900/30 to-blue-900/30 px-4 py-2 rounded-full mr-1">{calleeUser?.username[0]}</span>
+          <h3>{calleeUser?.username}</h3>
+        </div>
+      ) : (
+        <></>
+      )}
       {/* <div className="w-full bg-white text-red-500 h-full">{errorMessage ? errorMessage : "Null"}</div> */}
       <div className="w-full h-screen bg-black  text-white ">
         <video
@@ -250,7 +290,7 @@ const Call = () => {
           ref={frndsStreamRef}
           className={`w-full h-full rounded-4xl scale-x-[-1] absolute  `}
         />
-        <div className="fixed MyStream w-[20%] md:h-[20%] z-20  right-0 bottom-38">
+        <div className={`fixed MyStream sm:w-[30%] w-[50%]   z-20  right-0 ${isHidden ? "bottom-0" : "bottom-14"}`}>
           <video
             autoPlay
             muted
@@ -259,19 +299,22 @@ const Call = () => {
             className={` scale-x-[-1] p-2 rounded-2xl`}
           />
         </div>
-
-        <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-between p-4">
-          <button
-            className="bg-zinc-500 p-3 rounded-full"
-            onClick={() => handleScreenShare()}>
-            <ScreenShare />
-          </button>
-          <button
-            className="bg-red-500 p-3 rounded-full"
-            onClick={() => handleCallEndInitiator()}>
-            <PhoneOff />
-          </button>
-        </div>
+        {!isHidden ? (
+          <div className="fixed bottom-0 bg-zinc-800 w-full h-15 rounded-t-md flex items-center justify-between p-4 ">
+            <button
+              className="bg-zinc-500 p-3 rounded-full"
+              onClick={() => handleScreenShare()}>
+              <ScreenShare />
+            </button>
+            <button
+              className="bg-red-500 p-3 rounded-full"
+              onClick={() => handleCallEndInitiator()}>
+              <PhoneOff />
+            </button>
+          </div>
+        ) : (
+          <></>
+        )}
       </div>
     </>
   );

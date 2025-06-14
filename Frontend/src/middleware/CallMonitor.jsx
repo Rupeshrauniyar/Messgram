@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from "react";
+import React, {useContext, useEffect, useRef} from "react";
 import {UserContext} from "../context/UserContext";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -11,10 +11,18 @@ const socket = io(BACKENDURL);
 const CallMonitor = () => {
   const ringAudio = new Audio(incoming);
   const navigate = useNavigate();
-
+  const buttonRef = useRef(null);
   const {stop, setStop, incomingCall, setIncomingCall, caller, chatId, user} = useContext(UserContext);
+  useEffect(()=>{
+    buttonRef.current.click()
+  },[])
   const acceptCall = () => {
+
+
+
     // socket.emit("accept-call", chatId);
+    ringAudio.currentTime = 0;
+    ringAudio.pause();
     setStop(true);
     setIncomingCall(false);
     navigate(`/call/${chatId}/${user._id}/?initiator=false`);
@@ -26,19 +34,24 @@ const CallMonitor = () => {
     };
     socket.emit("close-call", Data);
     setIncomingCall(false);
+    ringAudio.currentTime = 0;
+    ringAudio.pause();
   };
   useEffect(() => {
     if (incomingCall) {
-      // ringAudio.play();
-      // ringAudio.loop = true;
-    } else {
-      // ringAudio.pause();
+      ringAudio.play();
+      ringAudio.loop = true;
     }
   }, [incomingCall]);
   return (
     <>
+      <button
+        className="hidden"
+        ref={buttonRef}></button>
       {!incomingCall ? (
-        <Outlet />
+        <>
+          <Outlet />
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center min-h-screen text-white">
           {/* User Avatar or Logo */}

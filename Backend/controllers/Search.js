@@ -2,8 +2,15 @@ const UserModel = require('../models/User.js')
 const Search = async (req, res) => {
     try {
         const Data = req.body
-        if (Data) {
+        if (Data.username) {
             const User = await UserModel.find({ username: { $regex: Data.username, $options: "i" } })
+            if (User) {
+                res.status(200).json({ success: true, message: 'User found', user: User })
+            } else {
+                res.status(200).json({ success: false, message: 'User not found' })
+            }
+        } else if (Data.receiverId) {
+            const User = await UserModel.findOne({ _id: Data.receiverId })
             if (User) {
                 res.status(200).json({ success: true, message: 'User found', user: User })
             } else {
