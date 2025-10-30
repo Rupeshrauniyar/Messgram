@@ -1,6 +1,10 @@
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import App from "./App.jsx";
 
-// Render the app
-createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+

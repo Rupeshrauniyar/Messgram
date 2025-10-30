@@ -137,7 +137,6 @@ const Call = () => {
     }
     // console.log(offer);
   };
-
   const getStream = async () => {
     try {
       await navigator.mediaDevices
@@ -159,33 +158,61 @@ const Call = () => {
           // frndsStreamRef.current.srcObject = stream;
         });
     } catch (err) {
-      handleCallEndInitiator();
-      // console.log(err);
-      navigate(-1);
+      try {
+        await navigator.mediaDevices
+          .getUserMedia({
+            video: true,
+            // audio: true,
+          })
+          .then((stream) => {
+            streamRef.current = stream;
+            stream.getTracks().forEach((track) => {
+              peer.addTrack(track, stream);
+            });
+            myStreamRef.current.srcObject = stream;
+            if (location.search === "?initiator=true") {
+              initiateCall();
+            } else {
+              initiateReceiver();
+            }
+            // frndsStreamRef.current.srcObject = stream;
+          });
+      } catch (err2) {
+        handleCallEndInitiator();
+        // console.log(err);
+        alert(err);
+        navigate(-1);
+      }
     }
   };
 
-  const handleScreenShare = () => {
+  const handleScreenShare = async () => {
     try {
       setErrorMessage("no errorMessage");
-      navigator.mediaDevices.getDisplayMedia({screen: true, audio: true}).then((stream) => {
-        const videoSender = peer.getSenders().find((s) => s.track?.kind === "video");
-        const screenTrack = stream.getTracks()[0];
-        stream.getTracks().forEach(async (track) => {
-          if (videoSender) {
-            await videoSender.replaceTrack(track);
-          } else {
-            peer.addTrack(track, stream);
-          }
-        });
+      await navigator.mediaDevices.getDisplayMedia({screen: true, audio: true}).then((stream) => {
+        if (stream) {
+          console.log("pperSenders", peer.getReceivers());
+          const videoSender = peer.getSenders().find((s) => s.track?.kind === "video");
+          const screenTrack = stream.getTracks()[0];
+          console.log(videoSender);
+          stream.getTracks().forEach((track) => {
+            if (videoSender || videoSender !== undefined) {
+              console.log(track);
+              videoSender.replaceTrack(track);
+            } else {
+              console.log("track added");
+              peer.addTrack(track, stream);
+            }
+          });
 
-        myStreamRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setScreenShare(true);
-        screenTrack.onended = () => {
-          // When screen share ends (user clicks stop sharing)
-          stopScreenShare();
-        };
+          myStreamRef.current.srcObject = stream;
+          streamRef.current = stream;
+          setScreenShare(true);
+          screenTrack.onended = () => {
+            // When screen share ends (user clicks stop sharing)
+            stopScreenShare();
+          };
+        }
       });
     } catch (err) {
       alert("Unable to share screen", err);
@@ -232,11 +259,56 @@ const Call = () => {
     };
 
     peer.ontrack = async (event) => {
+      console.log(event);
       if (event.streams[0]) {
+        console.log(event.streams);
+
         frndsStreamRef.current.srcObject = event.streams[0];
+      } else if (event.streams[1]) {
+        console.log(event.streams);
+
+        frndsStreamRef.current.srcObject = event.streams[1];
+      } else {
+        console.log(event.streams);
       }
       // console.log(event);
     };
+
+    peer.onnegotiationneeded = async () => {
+      try {
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+
+        socket.emit("negotiation-needed", {
+          chatId,
+          offer: peer.localDescription,
+        });
+      } catch (err) {
+        console.error("Error during negotiationneeded:", err);
+      }
+    };
+
+    socket.on("negotiation-needed", async (Data) => {
+      try {
+        await peer.setRemoteDescription(new RTCSessionDescription(Data));
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        socket.emit("negotiation-response", {
+          chatId,
+          answer: peer.localDescription,
+        });
+      } catch (err) {
+        alert("Error on negotiation");
+      }
+    });
+
+    socket.on("negotiation-response", async (Data) => {
+      try {
+        await peer.setRemoteDescription(new RTCSessionDescription(Data));
+      } catch (err) {
+        console.error("Error during negotiationResponse:", err);
+      }
+    });
     socket.on("join-callees", async (answer) => {
       // ringAudio.pause();
       await peer.setRemoteDescription(answer);

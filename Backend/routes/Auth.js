@@ -1,9 +1,12 @@
-const { Signup, Signin } = require('../controllers/Auth')
-const express = require('express')
-const Router = express.Router()
-const Authenticate = require('../middlewares/Authenticate')
-Router.post("/signin", Signin)
-Router.post("/signup", Signup)
-Router.get("/authenticate", Authenticate)
+const { Signup, Signin, ForgotPassword,Google } = require("../controllers/Auth");
+const express = require("express");
+const Router = express.Router();
+const Authenticate = require("../middlewares/Authenticate");
+Router.post("/signin", Signin);
+Router.post("/signup", Signup);
+Router.post("/google", Google);
 
-module.exports = Router
+Router.post("/forgot-password", ForgotPassword);
+Router.get("/authenticate", Authenticate);
+
+module.exports = Router;

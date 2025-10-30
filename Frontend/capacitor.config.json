@@ -1,6 +1,6 @@
 {
   "appId": "com.messgram.app",
-  "appName": "messgram",
+  "appName": "Messgram",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

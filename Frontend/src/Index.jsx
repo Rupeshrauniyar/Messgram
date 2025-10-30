@@ -1,5 +1,5 @@
 import React from "react";
-import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
@@ -9,6 +9,8 @@ import IsSignedIn from "./middleware/IsSignedIn";
 import AddFriend from "./pages/Add-friend";
 import Call from "./pages/Call";
 import CallMonitor from "./middleware/CallMonitor";
+import ForgotPassword from "./pages/Forgot-password";
+import Notification from "./pages/Notification";
 const Index = () => {
   return (
     <div className="w-full h-screen bg-black text-white z-10">
@@ -20,9 +22,14 @@ const Index = () => {
               element={<Home />}
             />
             <Route
+              path="/notification"
+              element={<Notification />}
+            />
+            <Route
               path="/add-friend"
               element={<AddFriend />}
             />
+
             <Route
               path="/message/:receiverId/:senderId"
               element={<Message />}
@@ -45,6 +52,10 @@ const Index = () => {
         <Route
           path="/signup"
           element={<Signup />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
         />
       </Routes>
     </div>

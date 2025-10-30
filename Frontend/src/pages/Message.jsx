@@ -251,7 +251,7 @@ const Message = () => {
               <button
                 className="text-green-600 hover:text-white transition-colors cursor-pointer"
                 onClick={() => handleCall()}>
-                <VideoIcon size={25} />
+                <VideoIcon size={30} />
               </button>
 
               {/* <button className="text-gray-400 hover:text-white transition-colors">
